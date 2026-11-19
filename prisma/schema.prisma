@@ -1,0 +1,327 @@
+// CRM Central Consult — banco único compartilhado pelos módulos.
+// Enums são guardados como String (SQLite) e validados no servidor (Zod + dominio.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Cadastros ----------
+
+model Empresa {
+  id              String         @id @default(cuid())
+  nome            String
+  nomeBusca       String         @default("") // nome normalizado (minúsculas, sem acento) para busca
+  cnpj            String? // somente dígitos
+  site            String?
+  linkedin        String?
+  telefone        String?
+  telefoneDigitos String?
+  email           String?
+  porte           String? // MEI | PEQUENO | MEDIO | GRANDE
+  ramo            String? // INDUSTRIA | COMERCIO | SERVICOS | SAUDE | EDUCACAO | GOVERNO | TERCEIRO_SETOR | OUTRO
+  setorAtividade  String?
+  observacoes     String?
+  contatos        Contato[]
+  oportunidades   Oportunidade[]
+  criadoEm        DateTime       @default(now())
+  atualizadoEm    DateTime       @updatedAt
+
+  @@index([nome])
+  @@index([nomeBusca])
+  @@index([cnpj])
+}
+
+model Contato {
+  id               String            @id @default(cuid())
+  nome             String
+  sobrenome        String?
+  nomeBusca        String            @default("") // nome + sobrenome normalizados para busca
+  cpf              String? // somente dígitos
+  rg               String?
+  dataNascimento   DateTime?
+  cargo            String?
+  departamento     String?
+  setor            String?
+  email            String
+  emailNormalizado String
+  linkedin         String?
+  recebeMalaDireta Boolean           @default(false)
+  observacoes      String?
+  empresaId        String?
+  empresa          Empresa?          @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  telefones        TelefoneContato[]
+  tags             ContatoTag[]
+  notas            NotaContato[]
+  arquivos         ArquivoContato[]
+  eventos          ContatoEvento[]
+  participacoes    Participante[]
+  tarefas          Tarefa[]
+  oportunidades    Oportunidade[]
+  criadoEm         DateTime          @default(now())
+  atualizadoEm     DateTime          @updatedAt
+
+  @@index([emailNormalizado])
+  @@index([nome])
+  @@index([nomeBusca])
+  @@index([cpf])
+  @@index([empresaId])
+}
+
+model TelefoneContato {
+  id            String   @id @default(cuid())
+  contatoId     String
+  contato       Contato  @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  tipo          String // COMERCIAL | CELULAR | WHATSAPP | RESIDENCIAL | OUTRO
+  numero        String
+  numeroDigitos String
+  principal     Boolean  @default(false)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@index([contatoId])
+  @@index([numeroDigitos])
+}
+
+model Tag {
+  id              String       @id @default(cuid())
+  nome            String
+  nomeNormalizado String       @unique
+  contatos        ContatoTag[]
+  criadoEm        DateTime     @default(now())
+}
+
+model ContatoTag {
+  contatoId String
+  contato   Contato  @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  criadoEm  DateTime @default(now())
+
+  @@id([contatoId, tagId])
+  @@index([tagId])
+}
+
+model NotaContato {
+  id            String       @id @default(cuid())
+  contatoId     String
+  contato       Contato      @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  texto         String
+  responsavelId String?
+  responsavel   Responsavel? @relation(fields: [responsavelId], references: [id], onDelete: SetNull)
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  @@index([contatoId])
+}
+
+model ArquivoContato {
+  id              String   @id @default(cuid())
+  contatoId       String
+  contato         Contato  @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  nomeOriginal    String
+  nomeArmazenado  String
+  tipoMime        String
+  tamanhoBytes    Int
+  criadoEm        DateTime @default(now())
+
+  @@index([contatoId])
+}
+
+model ContatoEvento {
+  id           String   @id @default(cuid())
+  contatoId    String
+  contato      Contato  @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  eventoId     String
+  evento       Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  papel        String // INTERESSADO | PARTICIPANTE | PALESTRANTE | PATROCINADOR
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([contatoId, eventoId])
+  @@index([eventoId])
+}
+
+model Evento {
+  id            String              @id @default(cuid())
+  nome          String
+  // Série (linha) do evento: COMSAÚDE, IATECH RH… — agrupa as edições de cada ano
+  serieId       String?
+  serie         SerieEvento?        @relation(fields: [serieId], references: [id], onDelete: SetNull)
+  edicao        Int? // ano da edição (ex.: 2027)
+  descricao     String?
+  dataInicio    DateTime
+  dataFim       DateTime?
+  publicoAlvo   EventoPublicoAlvo[]
+  oportunidades Oportunidade[]
+  contatos      ContatoEvento[]
+  participantes Participante[]
+  criadoEm      DateTime            @default(now())
+  atualizadoEm  DateTime            @updatedAt
+
+  @@index([nome])
+  @@index([serieId])
+}
+
+/** Linha de eventos recorrentes (ex.: COMSAÚDE): cada ano é uma edição (Evento). */
+model SerieEvento {
+  id           String   @id @default(cuid())
+  nome         String
+  nomeBusca    String   @unique
+  eventos      Evento[]
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+/** Segmento de público-alvo (ex.: "Saúde ocupacional", "SST", "RH"), reaproveitado entre eventos. */
+model PublicoAlvo {
+  id              String              @id @default(cuid())
+  nome            String
+  nomeNormalizado String              @unique
+  eventos         EventoPublicoAlvo[]
+  criadoEm        DateTime            @default(now())
+}
+
+model EventoPublicoAlvo {
+  eventoId      String
+  evento        Evento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  publicoAlvoId String
+  publicoAlvo   PublicoAlvo @relation(fields: [publicoAlvoId], references: [id], onDelete: Cascade)
+
+  @@id([eventoId, publicoAlvoId])
+  @@index([publicoAlvoId])
+}
+
+model Responsavel {
+  id            String         @id @default(cuid())
+  nome          String
+  // Acesso ao CRM (login). Sem e-mail/senha, o responsável existe mas não entra no sistema.
+  email         String?        @unique
+  senhaHash     String? // formato "scrypt$<sal>$<hash>"
+  ativo         Boolean        @default(true)
+  oportunidades Oportunidade[]
+  tarefas       Tarefa[]
+  notas         NotaContato[]
+  registrosParticipantes RegistroParticipante[]
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+}
+
+// ---------- Oportunidades ----------
+
+model Oportunidade {
+  id                    String      @id @default(cuid())
+  titulo                String
+  eventoId              String
+  evento                Evento      @relation(fields: [eventoId], references: [id], onDelete: Restrict)
+  tipoVenda             String // INSCRICAO | PATROCINIO
+  contatoId             String
+  contato               Contato     @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  empresaId             String?
+  empresa               Empresa?    @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  origemLead            String
+  responsavelId         String
+  responsavel           Responsavel @relation(fields: [responsavelId], references: [id], onDelete: Restrict)
+  valorEstimadoCentavos Int
+  etapa                 String      @default("NOVO") // NOVO | EM_ATENDIMENTO | PROPOSTA_ENVIADA | EM_NEGOCIACAO | FECHADO | PERDIDO
+  valorFinalCentavos    Int?
+  motivoPerda           String?
+  statusPagamento       String? // PENDENTE | PAGO (somente quando FECHADO)
+  fechadoEm             DateTime?
+  tarefas               Tarefa[]
+  historico             Historico[]
+  criadoEm              DateTime    @default(now())
+  atualizadoEm          DateTime    @updatedAt
+
+  @@index([eventoId])
+  @@index([etapa])
+  @@index([empresaId])
+  @@index([contatoId])
+  @@index([responsavelId])
+}
+
+// ---------- Agenda ----------
+
+model Tarefa {
+  id             String        @id @default(cuid())
+  // Vínculo: oportunidade, contato ou os dois (ao menos um — validado no serviço da Agenda)
+  oportunidadeId String?
+  oportunidade   Oportunidade? @relation(fields: [oportunidadeId], references: [id], onDelete: Cascade)
+  contatoId      String?
+  contato        Contato?      @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+  descricao      String
+  prazo          DateTime // meia-noite de São Paulo do dia do prazo
+  responsavelId  String
+  responsavel    Responsavel   @relation(fields: [responsavelId], references: [id], onDelete: Restrict)
+  situacao       String        @default("PENDENTE") // PENDENTE | CONCLUIDA
+  concluidaEm    DateTime?
+  criadoEm       DateTime      @default(now())
+  atualizadoEm   DateTime      @updatedAt
+
+  @@index([oportunidadeId, situacao])
+  @@index([contatoId, situacao])
+  @@index([situacao, prazo])
+}
+
+// ---------- Histórico ----------
+
+model Historico {
+  id             String       @id @default(cuid())
+  oportunidadeId String
+  oportunidade   Oportunidade @relation(fields: [oportunidadeId], references: [id], onDelete: Cascade)
+  data           DateTime     @default(now())
+  tipo           String // INTERACAO | MUDANCA_ETAPA
+  descricao      String
+  canal          String? // WHATSAPP | EMAIL | TELEFONE | REUNIAO
+  resumo         String?
+  combinado      String?
+  etapaAnterior  String?
+  etapaNova      String?
+  criadoEm       DateTime     @default(now())
+
+  @@index([oportunidadeId, data])
+}
+
+// ---------- Participantes (inscritos de cada evento) ----------
+
+model Participante {
+  id                   String                 @id @default(cuid())
+  eventoId             String
+  evento               Evento                 @relation(fields: [eventoId], references: [id], onDelete: Restrict)
+  contatoId            String
+  contato              Contato                @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  nomeCracha           String
+  modalidade           String // PRESENCIAL | ONLINE | HIBRIDA
+  tipoInscricao        String // CORTESIA | PAGANTE
+  cortesiaConcedidaPor String?
+  lote                 String? // ex.: "1ª Tabela"
+  descontoPercentual   Int?
+  valorCentavos        Int?
+  confirmacaoEnviadaEm DateTime?
+  confirmacaoCanal     String? // WHATSAPP | EMAIL | TELEFONE
+  presenca             String                 @default("PENDENTE") // PENDENTE | CONFIRMADA | CANCELADA
+  observacoes          String?
+  registros            RegistroParticipante[]
+  criadoEm             DateTime               @default(now())
+  atualizadoEm         DateTime               @updatedAt
+
+  @@unique([eventoId, contatoId])
+  @@index([eventoId])
+}
+
+/** Histórico de cada participante (inscrição, mudança de modalidade, confirmação, presença). */
+model RegistroParticipante {
+  id             String       @id @default(cuid())
+  participanteId String
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  descricao      String
+  responsavelId  String?
+  responsavel    Responsavel? @relation(fields: [responsavelId], references: [id], onDelete: SetNull)
+  data           DateTime     @default(now())
+
+  @@index([participanteId, data])
+}

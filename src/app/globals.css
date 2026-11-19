@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/*
+ * Identidade visual Central Consult (Opção A — SaaS moderno).
+ * marinho = estrutura e marca · royal = ações e destaques · ouro = acento pontual (nunca texto sobre branco).
+ */
+@theme {
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-titulo: "Plus Jakarta Sans", "Inter Variable", system-ui, sans-serif;
+
+  --color-marca-50: #eef2fc;
+  --color-marca-100: #dce4f8;
+  --color-marca-200: #b9c9f1;
+  --color-marca-500: #5175d3;
+  --color-marca-600: #3f63c7;
+  --color-marca-700: #2e4fae;
+  --color-marca-800: #2a47a0;
+  --color-marinho: #1f2b7a;
+  --color-ouro: #f2ce4e;
+  --color-ouro-escuro: #e0b92f;
+
+  --color-fundo: #f4f6fb;
+  --color-borda: #e6eaee;
+  --color-tinta: #14212b;
+  --color-tinta-2: #33434e;
+  --color-suave: #5b6b76;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-tinta);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-marca-500);
+  outline-offset: 2px;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animar-entrada {
+  animation: entrar 160ms ease-out;
+}
