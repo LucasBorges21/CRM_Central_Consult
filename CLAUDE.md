@@ -29,7 +29,8 @@ Depois de qualquer mudança, rode: `lint`, `typecheck`, `test`, `build` e `test:
 - **Não rode `prisma migrate reset` como agente.** O Prisma bloqueia esse comando e pede o consentimento explícito do usuário. Para criar uma migração: altere `schema.prisma`, gere o SQL com `npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` dentro de `prisma/migrations/<timestamp>_<nome>/migration.sql`, ajuste a cópia de dados se precisar, teste numa **cópia** do `dev.db` e aplique com `npm run db:migrate`. O `prisma migrate dev` não funciona em modo não interativo.
 - O projeto fica numa pasta do OneDrive, com "Á" no caminho. Use caminhos entre aspas.
 - O e2e usa `channel: "msedge"` (Edge instalado). Defina `PW_CHROMIUM=1` para usar o Chromium do Playwright.
-- `dados/` (arquivos anexados) e `*.db` não vão para o git.
+- `dados/` (arquivos anexados), `*.db` e `.env` não vão para o git (modelo em `.env.example`). O repositório é **público** no GitHub.
+- **Demonstração online**: `Dockerfile` + `render.yaml` (Render, plano gratuito). O contêiner roda migração + seed a cada início, então os dados voltam à demonstração; `CRM_MOSTRAR_ACESSO_DEMO=1` exibe o acesso demo no login. Detalhes no `README.md`.
 
 ## Stack
 

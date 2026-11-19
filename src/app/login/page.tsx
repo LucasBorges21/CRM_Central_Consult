@@ -48,7 +48,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           </div>
           {mostrarAcessoDemo && (
             <div className="mt-4 rounded-xl border border-dashed border-marca-200 bg-white/70 p-4 text-[13px] text-tinta-2">
-              <p className="font-semibold text-tinta">Acesso de demonstração (somente desenvolvimento)</p>
+              <p className="font-semibold text-tinta">Acesso de demonstração{process.env.NODE_ENV !== "production" && " (somente desenvolvimento)"}</p>
               <p className="mt-1">
                 <code>ana.ribeiro@centralconsult.example</code> · senha <code>demo1234</code>
               </p>

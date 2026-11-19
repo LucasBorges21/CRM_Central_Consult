@@ -62,6 +62,16 @@ Outros comandos:
 
 Os prazos são relativos ao dia em que o seed é executado, então sempre há tarefas atrasadas, de hoje e futuras.
 
+### Demonstração online (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/LucasBorges21/CRM_Central_Consult)
+
+O `render.yaml` cria um serviço web gratuito a partir do `Dockerfile`:
+
+- A cada início, o contêiner aplica as migrações e **recarrega os dados fictícios** (`prisma db seed`). O banco SQLite fica dentro do contêiner, então **o que for gravado se perde** quando o serviço reinicia ou "dorme" (plano gratuito: após 15 min sem acesso; o primeiro acesso depois disso leva cerca de 30 s).
+- `AUTH_SECRET` é gerado pelo Render. `CRM_MOSTRAR_ACESSO_DEMO=1` mostra o acesso de demonstração na tela de login.
+- Não use com dados reais: para isso falta a publicação de verdade (PostgreSQL, backup, perfis).
+
 ## Telas
 
 | Menu | Rota | Conteúdo |

@@ -1,0 +1,12 @@
+# Demonstração pública no Render (plano gratuito). Veja "Demonstração online" no README.
+services:
+  - type: web
+    name: crm-central-consult
+    runtime: docker
+    plan: free
+    healthCheckPath: /login
+    envVars:
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CRM_MOSTRAR_ACESSO_DEMO
+        value: "1"
